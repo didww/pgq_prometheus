@@ -13,7 +13,7 @@ module PgqPrometheus
       metric_labels = labels&.dup || {}
       process_collector = new(metric_labels)
 
-      stop if @thread
+      stop if running?
 
       @thread = Thread.new do
         while true
@@ -35,14 +35,14 @@ module PgqPrometheus
     end
 
     def self.stop
-      return if @thread.nil?
+      return unless running?
 
       @thread.kill
       @thread = nil
     end
 
     def self.running?
-      !@thread.nil?
+      defined?(@thread) && @thread
     end
 
     def initialize(labels = {})

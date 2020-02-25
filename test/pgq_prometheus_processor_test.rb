@@ -35,7 +35,7 @@ class PgqPrometheusTest < Minitest::Test
     assert PgqPrometheus::Processor.running?
 
     assert_nil PgqPrometheus::Processor.stop
-    sleep 0.5 # give time for process thread to shutdown
+    sleep 1 # give time for process thread to shutdown
     assert_equal old_threads_count, running_thread_count
     refute PgqPrometheus::Processor.running?
   end
