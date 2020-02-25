@@ -1,5 +1,7 @@
 # PgqPrometheus
 
+[![Build Status](https://travis-ci.com/senid231/pgq_prometheus.svg?branch=master)](https://travis-ci.com/senid231/pgq_prometheus)
+
 Highly configurable Prometheus metrics for PGQ postgres extension
 
 ## Installation
