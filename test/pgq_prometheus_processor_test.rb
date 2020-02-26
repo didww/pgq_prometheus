@@ -2,7 +2,7 @@
 
 require 'test_helper'
 
-class PgqPrometheusTest < Minitest::Test
+class PgqPrometheusProcessorTest < Minitest::Test
   def teardown
     PgqPrometheus::Processor.sql_caller = nil
   end

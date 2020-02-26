@@ -27,6 +27,7 @@ Basic usage with rails
 ### config/initializers/pgq_prometheus.rb
 ```ruby
 require 'pgq_prometheus'
+require 'pgq_prometheus/processor'
 
 # If you use postgresql library/orm other then active_record
 # look at PgqPrometheus::SqlCaller::ActiveRecord for example of what sql caller should return.
@@ -35,7 +36,7 @@ require 'pgq_prometheus/sql_caller/active_record'
 # We will configure processor here
 PgqPrometheus::Processor.tap do |processor|
   # you must set sql_caller to retrieve data from postgres
-  processor.sql_caller = PgqPrometheus::SqlCaller::ActiveRecord.new(ApplicationRecord)
+  processor.sql_caller = PgqPrometheus::SqlCaller::ActiveRecord.new('ApplicationRecord')
   # you can setup processor logger
   processor.logger = Rails.logger
   # you can do something custom when processor rescues and exception
@@ -43,16 +44,16 @@ PgqPrometheus::Processor.tap do |processor|
 end
 
 # we keep configuration is separate file because both processor and collector should require it.
-require 'pgq_prometheus_configure' # @see lib/pgq_prometheus_configure.rb
+require 'pgq_prometheus_config' # @see lib/pgq_prometheus_configure.rb
 
 # Will start thread which will collect pgq metrics every 30 seconds.
 PgqPrometheus::Processor.start(frequency: 30)
 ```
 
-### lib/pgq_prometheus_configure.rb
+### lib/pgq_prometheus_config.rb
 ```ruby
 # We will keep metrics configuration here
- 
+
 PgqPrometheus.configure do |config|
   # these are default metrics - no need to define them manually
   config.register_gauge :new_events, 'new events qty for queue',
@@ -62,7 +63,7 @@ PgqPrometheus.configure do |config|
     from: :queue, column: :ev_per_sec
 
   config.register_gauge :pending_events, 'pending events qty for queue and consumer',
-                     from: :consumer 
+                     from: :consumer
 
   # you can define custom metrics
   config.register_histogram :new_events_hist, 'PGQ new events histogram',
@@ -70,7 +71,7 @@ PgqPrometheus.configure do |config|
     labels: { custom_label_name: 'qwe' },
     buckets: [1_000, 100, 50, 10, 1, 0]
   config.register_counter :custom_queue_metric, 'something custom for queue',
-    from: :queue, 
+    from: :queue,
     apply: proc { |queue_info| CustomQueueMetric.call queue_info[:queue_name] }
   config.register_counter :custom_consumer_metric, 'something custom',
     from: :queue,
@@ -87,9 +88,10 @@ end
 ### lib/prometheus_collectors.rb
 ```ruby
 # Require all custom prometheus collectors here
- 
-require 'pgq_prometheus/collector' 
-require_relative 'pgq_prometheus_configure' 
+
+require 'pgq_prometheus'
+require 'pgq_prometheus/collector'
+require_relative 'pgq_prometheus_config'
 ```
 
     $ bundle exec prometheus_exporter -a /path/to/mypoject/lib/prometheus_collectors.rb

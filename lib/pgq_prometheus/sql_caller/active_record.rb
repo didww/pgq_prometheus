@@ -6,10 +6,11 @@ module PgqPrometheus
       #
       #   require 'pgq_prometheus'
       #   require 'pgq_prometheus/sql_caller/active_record'
-      #   PgqPrometheus::Processor.sql_caller = PgqPrometheus::SqlCaller::ActiveRecord.new(ApplicationRecord)
+      #   PgqPrometheus::Processor.sql_caller = PgqPrometheus::SqlCaller::ActiveRecord.new('ApplicationRecord')
 
-      def initialize(model_class)
-        @model_class = model_class
+      # @param model_class_name [Class<Object>,String] class or class name
+      def initialize(model_class_name)
+        @model_class_name = model_class_name.to_s
       end
 
       # Returns pgq.get_queue_info for one or all queues.
@@ -33,15 +34,19 @@ module PgqPrometheus
         if consumer
           select_hashes('SELECT * FROM pgq.get_consumer_info(?, ?)', queue.to_s, consumer.to_s).first
         else
-          select_hashes('SELECT * FROM pgq.get_queue_info(?)', queue.to_s)
+          select_hashes('SELECT * FROM pgq.get_consumer_info(?)', queue.to_s)
         end
       end
 
       private
 
+      def model_class
+        @model_class ||= Kernel.const_get(@model_class_name)
+      end
+
       def select_hashes(sql, *bindings)
-        sql = @model_class.send :sanitize_sql_array, bindings.unshift(sql) unless bindings.empty?
-        result = @model_class.connection.select_all(sql)
+        sql = model_class.send :sanitize_sql_array, bindings.unshift(sql) unless bindings.empty?
+        result = model_class.connection.select_all(sql)
         result.map do |row|
           row.map { |k, v| [k.to_sym, result.column_types[k].deserialize(v)] }.to_h
         end
