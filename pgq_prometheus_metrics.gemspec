@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
 
   spec.summary       = 'Prometheus metrics for PGQ postgres extension'
   spec.description   = 'Prometheus metrics for PGQ postgres extension'
-  spec.homepage      = 'https://github.com/senid231/pgq_prometheus'
+  spec.homepage      = 'https://github.com/didww/pgq_prometheus'
   spec.license       = 'MIT'
   spec.required_ruby_version = Gem::Requirement.new('>= 2.3.0')
 
