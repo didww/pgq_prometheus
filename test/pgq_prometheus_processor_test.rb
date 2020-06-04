@@ -23,7 +23,7 @@ class PgqPrometheusProcessorTest < Minitest::Test
   end
 
   def test_processor_start_not_raise
-    sql_caller = create_sql_caller_mock([], [])
+    sql_caller = create_sql_caller_mock([], [], with_connection: true, release_connection: true)
     sql_caller.expect(:nil?, false)
     PgqPrometheus::Processor.sql_caller = sql_caller
     old_threads_count = running_thread_count
@@ -33,17 +33,21 @@ class PgqPrometheusProcessorTest < Minitest::Test
     assert PgqPrometheus::Processor.start
     assert_equal old_threads_count + 1, running_thread_count
     assert PgqPrometheus::Processor.running?
+    sleep 2 # give time for process thread to execute one iteration
 
     assert_nil PgqPrometheus::Processor.stop
-    sleep 1 # give time for process thread to shutdown
+    sleep 2 # give time for process thread to shutdown
     assert_equal old_threads_count, running_thread_count
     refute PgqPrometheus::Processor.running?
+
+    assert sql_caller.verify
   end
 
   def test_processor_collect
     sql_caller = create_sql_caller_mock(
         [queue_name: 'q', ev_new: 5, ev_per_sec: 1.33],
-        [consumer_name: 'c', pending_events: 18]
+        [consumer_name: 'c', pending_events: 18],
+        with_connection: true
     )
     PgqPrometheus::Processor.sql_caller = sql_caller
 
@@ -61,7 +65,8 @@ class PgqPrometheusProcessorTest < Minitest::Test
   def test_processor_collect_with_custom_labels
     sql_caller = create_sql_caller_mock(
         [queue_name: 'q', ev_new: 5, ev_per_sec: 7.33],
-        [consumer_name: 'c', pending_events: 12]
+        [consumer_name: 'c', pending_events: 12],
+        with_connection: true
     )
     PgqPrometheus::Processor.sql_caller = sql_caller
 
@@ -79,12 +84,13 @@ class PgqPrometheusProcessorTest < Minitest::Test
   def test_processor_collect_with_custom_metric
     sql_caller = create_sql_caller_mock(
         [queue_name: 'q', ev_new: 6, ev_per_sec: 1.33],
-        [consumer_name: 'c', pending_events: 12]
+        [consumer_name: 'c', pending_events: 12],
+        with_connection: true
     )
     PgqPrometheus::Processor.sql_caller = sql_caller
     PgqPrometheus.configure do |config|
       config.register_counter :custom_q, 'custom test q', from: :queue, apply: proc { |q| q[:ev_per_sec].round }
-      config.register_summary :custom_c, 'custom test c', from: :consumer, apply: proc { |c| c[:pending_events]*10 }
+      config.register_summary :custom_c, 'custom test c', from: :consumer, apply: proc { |c| c[:pending_events] * 10 }
       config.register_gauge :custom, 'custom test', labels: { bar: 'baz' }, apply: proc { 1234 }
     end
 
@@ -114,15 +120,42 @@ class PgqPrometheusProcessorTest < Minitest::Test
 
   # @param queues [Array, nil]
   # @param consumers [Array, nil]
-  def create_sql_caller_mock(queues, consumers)
+  def create_sql_caller_mock(queues, consumers, with_connection: false, release_connection: false)
     mock = MiniTest::Mock.new
-    mock.expect(:queue_info, queues) do |*args|
+
+    if release_connection
+      mock.expect(:release_connection, nil) do |*args, &block|
+        assert_empty args
+        assert_nil block
+        assert_nil @inside_with_connection
+      end
+    end
+
+    if with_connection
+      mock.expect(:with_connection, nil) do |*args, &block|
+        assert_empty args
+        refute_nil block
+
+        @inside_with_connection = true
+        begin
+          block.call
+        ensure
+          @inside_with_connection = nil
+        end
+      end
+    end
+
+    mock.expect(:queue_info, queues) do |*args, &block|
       assert_empty args
+      assert_nil block
+      assert @inside_with_connection
     end
 
     queues.each do |queue|
-      mock.expect(:consumer_info, consumers) do |*args|
+      mock.expect(:consumer_info, consumers) do |*args, &block|
         assert_equal [queue[:queue_name]], args
+        assert_nil block
+        assert @inside_with_connection
       end
     end
 

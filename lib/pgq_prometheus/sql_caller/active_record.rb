@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module PgqPrometheus
   module SqlCaller
     class ActiveRecord
@@ -36,6 +38,19 @@ module PgqPrometheus
         else
           select_hashes('SELECT * FROM pgq.get_consumer_info(?)', queue.to_s)
         end
+      end
+
+      # Releases active pg connection in thread.
+      # Do nothing if no connection captured.
+      def release_connection
+        model_class.release_connection
+      end
+
+      # Acquires pg connection during block execution.
+      # Release it after block executed.
+      # @yield
+      def with_connection
+        model_class.with_connection { yield }
       end
 
       private
