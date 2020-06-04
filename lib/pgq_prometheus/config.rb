@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'prometheus_exporter/metric'
 
 module PgqPrometheus
