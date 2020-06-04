@@ -43,14 +43,14 @@ module PgqPrometheus
       # Releases active pg connection in thread.
       # Do nothing if no connection captured.
       def release_connection
-        model_class.release_connection
+        model_class.connection_pool.release_connection
       end
 
       # Acquires pg connection during block execution.
       # Release it after block executed.
       # @yield
       def with_connection
-        model_class.with_connection { yield }
+        model_class.connection_pool.with_connection { yield }
       end
 
       private
