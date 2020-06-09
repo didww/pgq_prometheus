@@ -5,6 +5,7 @@ require 'prometheus_exporter/server'
 
 module PgqPrometheus
   class Collector < PrometheusExporter::Server::TypeCollector
+    MAX_METRIC_AGE = 30
 
     def initialize
       @data = []
@@ -48,6 +49,10 @@ module PgqPrometheus
     end
 
     def collect(obj)
+      now = ::Process.clock_gettime(::Process::CLOCK_MONOTONIC)
+
+      obj['created_at'] = now
+      @data.delete_if { |m| m['created_at'] + MAX_METRIC_AGE < now }
       @data << obj
     end
   end
