@@ -26,6 +26,7 @@ module PgqPrometheus
     def metrics
       return [] if @data.length == 0
 
+      @observers.each_value(&:reset!)
       metrics = {}
 
       @data.map do |obj|
