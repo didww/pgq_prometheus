@@ -63,8 +63,15 @@ module PgqPrometheus
         sql = model_class.send :sanitize_sql_array, bindings.unshift(sql) unless bindings.empty?
         result = model_class.connection.select_all(sql)
         result.map do |row|
-          row.map { |k, v| [k.to_sym, result.column_types[k].deserialize(v)] }.to_h
+          row.map { |k, v| [k.to_sym, deserialize_value(result, k, v)] }.to_h
         end
+      end
+
+      def deserialize_value(result, key, value)
+        pg_type = result.column_types[key]
+        return value if pg_type.nil?
+
+        pg_type.deserialize(value)
       end
     end
   end
