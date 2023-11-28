@@ -121,7 +121,7 @@ class PgqPrometheusProcessorTest < Minitest::Test
   # @param queues [Array, nil]
   # @param consumers [Array, nil]
   def create_sql_caller_mock(queues, consumers, with_connection: false, release_connection: false)
-    mock = MiniTest::Mock.new
+    mock = Minitest::Mock.new
 
     if release_connection
       mock.expect(:release_connection, nil) do |*args, &block|
