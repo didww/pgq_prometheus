@@ -30,11 +30,7 @@ module PgqPrometheus
       metrics = {}
 
       @data.map do |obj|
-        labels = {}
-        # labels are passed by PgqPrometheus::Processor
-        labels.merge!(obj['metric_labels']) if obj['metric_labels']
-        # custom_labels are passed by PrometheusExporter::Client
-        labels.merge!(obj['custom_labels']) if obj['custom_labels']
+        labels = gather_labels(obj)
 
         @observers.each do |name, observer|
           name = name.to_s
@@ -55,6 +51,17 @@ module PgqPrometheus
       obj['created_at'] = now
       @data.delete_if { |m| m['created_at'] + MAX_METRIC_AGE < now }
       @data << obj
+    end
+
+    private
+
+    def gather_labels(obj)
+      labels = {}
+      # labels are passed by PgqPrometheus::Processor
+      labels.merge!(obj['metric_labels']) if obj['metric_labels']
+      # custom_labels are passed by PrometheusExporter::Client
+      labels.merge!(obj['custom_labels']) if obj['custom_labels']
+      labels.to_h { |key, value| [key.to_s, value.to_s] }
     end
   end
 end
