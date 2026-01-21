@@ -1,6 +1,7 @@
 # PgqPrometheus
 
 [![Build Status](https://travis-ci.org/didww/pgq_prometheus.svg?branch=master)](https://travis-ci.org/didww/pgq_prometheus)
+[![Gem Version](https://badge.fury.io/rb/pgq_prometheus.svg?icon=si%3Arubygems)](https://badge.fury.io/rb/pgq_prometheus)
 
 Highly configurable Prometheus metrics for PGQ postgres extension
 
