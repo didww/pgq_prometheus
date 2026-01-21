@@ -4,7 +4,7 @@ require 'prometheus_exporter/metric'
 
 module PgqPrometheus
   module Config
-    ALLOWED_FROM = [:queue, :consumer, nil]
+    ALLOWED_FROM = [:queue, :consumer, nil].freeze
 
     class << self
       attr_accessor :type, :_metrics
@@ -41,12 +41,12 @@ module PgqPrometheus
       end
 
       _metrics[name] = {
-          metric_class: metric_class,
-          help: help,
-          metric_args: options[:metric_args] || [],
-          labels: options[:labels] || {},
-          from: from,
-          apply: apply
+        metric_class: metric_class,
+        help: help,
+        metric_args: options[:metric_args] || [],
+        labels: options[:labels] || {},
+        from: from,
+        apply: apply
       }
     end
 

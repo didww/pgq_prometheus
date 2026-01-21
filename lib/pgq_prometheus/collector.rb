@@ -8,6 +8,7 @@ module PgqPrometheus
     MAX_METRIC_AGE = 30
 
     def initialize
+      super
       @data = []
       @observers = {}
 
