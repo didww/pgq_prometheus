@@ -49,8 +49,8 @@ module PgqPrometheus
       # Acquires pg connection during block execution.
       # Release it after block executed.
       # @yield
-      def with_connection
-        model_class.connection_pool.with_connection { yield }
+      def with_connection(&)
+        model_class.connection_pool.with_connection(&)
       end
 
       private
